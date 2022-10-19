@@ -7,6 +7,7 @@ A shortcode [um_folder_permissions] to list UM folder permissions:
 UID/GID numbers for all folders are displayed.
 
 Warnings for existing .htaccess file, open_basedir, Suhosin and ModSecurity active.
+Error if according to WP the themes directory is either empty or does not exist.
 
 Files in these folders are checked for file permissions and the number of files for each permission level are listed.
 
