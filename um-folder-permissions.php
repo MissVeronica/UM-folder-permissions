@@ -2,7 +2,7 @@
 /**
  * Plugin Name:     Ultimate Member - Folder Permissions
  * Description:     Extension to Ultimate Member with a shortcode [um_folder_permissions] to list folder permissions in Active Theme's UM folders and the UM Upload folders.
- * Version:         1.0.0
+ * Version:         1.1.0
  * Requires PHP:    7.4
  * Author:          Miss Veronica
  * License:         GPL v2 or later
@@ -29,9 +29,10 @@ function um_folder_permissions_shortcode_display( $case, $folder ) {
                 break;
 
         case 'uploads':
-                $folder = '/uploads' . $folder;
-                echo '<p><strong>...' . $folder . '</strong>';
-                um_folder_permissions_shortcode_display_details( WP_CONTENT_DIR . $folder );
+                $wp_upload_dir = wp_upload_dir();
+                $upload_dir = str_replace( WP_CONTENT_DIR, '', $wp_upload_dir['basedir']);
+                echo '<p><strong>...' . $upload_dir . $folder . '</strong>';
+                um_folder_permissions_shortcode_display_details( $wp_upload_dir['basedir'] . $folder );
                 break;
     }
 }
@@ -39,16 +40,19 @@ function um_folder_permissions_shortcode_display( $case, $folder ) {
 function um_folder_permissions_shortcode_display_details( $folder ) {
 
     if( file_exists( $folder )) {
+        
         echo '</p>';
-        echo '<p>folder permission=' . substr( sprintf( '%o', fileperms( $folder )), -4 ) . ' octal</p>';
 
         if( file_exists( $folder . '/.htaccess' )) {
-            echo sprintf( '<p>WARNING: .htacces file exists with filesize %d bytes</p>', filesize( $folder . '/.htaccess' ));
+            echo sprintf( '<p><strong>WARNING</strong>: .htacces file exists with filesize %d bytes</p>', filesize( $folder . '/.htaccess' ));
         }
 
+        echo '<p>';
+        echo 'folder permission=' . substr( sprintf( '%o', fileperms( $folder )), -4 ) . ' octal<br>';
+
         $stat = @stat( $folder );
-        echo '<p>UID=' . $stat['uid'];
-        echo '   GID=' . $stat['gid'] . '</p>';
+        echo 'UID=' . $stat['uid'];
+        echo ' GID=' . $stat['gid'] . '<br>';
 
         $files = new DirectoryIterator( $folder . '/' );
         $permissions = array();
@@ -61,8 +65,9 @@ function um_folder_permissions_shortcode_display_details( $folder ) {
         }
 
         foreach( $permissions as $key => $count ) {
-            echo '<p>file permission ' . $key . ' count=' . $count . ' files</p>'; 
+            echo 'file permission ' . $key . ' count=' . $count . ' files<br>'; 
         }
+        echo '</p>';
 
     } else {
         echo ' folder not found</p>';
@@ -74,16 +79,33 @@ function um_folder_permissions_shortcode() {
     global $current_user;
     ob_start();
 
-    echo "<h4>UM folder permissions</h4>";
-    echo '<p<strong>WP Standard permissions:</strong><br>Folder permission not less than 0755 octal<br>File permission not less than 0644 octal</p>';
+    echo "<h4>UM folder permissions 1.1.0</h4>";
+    echo '<p><strong>WP Standard permissions:</strong><br>Folder permission not less than 0755 octal<br>File permission not less than 0644 octal</p>';
 
     if( !empty( array_intersect( array_map( 'strtolower', get_loaded_extensions()), array( 'mod_security', 'mod security' )))) {
-        echo( '<p>WARNING: MOD SECURITY is active</p>' );
+        echo( '<p><strong>WARNING</strong>: MOD SECURITY is active</p>' );
     }
-    if( extension_loaded( 'suhosin' )) echo '<p>WARNING: SUHOSIN is active</p>';
+    if( extension_loaded( 'suhosin' )) echo '<p><strong>WARNING</strong>: SUHOSIN is active</p>';
 
     $basedir = ini_get( 'open_basedir' );
-    if( !empty( $basedir )) echo '<p>WARNING: open_basedir is active: ' . $basedir . '</p>';
+    if( !empty( $basedir )) echo '<p><strong>WARNING</strong>: open_basedir is active: ' . $basedir . '</p>';
+
+    echo '<p>';    
+    echo 'get_template: ' . get_template() . '<br>';    
+    echo 'get_stylesheet: ' . get_stylesheet() . '<br>';
+    if( !empty( get_stylesheet_directory() )) {
+        echo '</p>';
+        echo '<p><strong>ERROR</strong>: The themes directory is either empty or does not exist.<br>
+              Please check your installation.<br>
+              WP is returning an empty get_stylesheet_directory.</p>';
+
+        $output = ob_get_contents();
+        ob_end_clean();
+
+        return $output;
+    }
+    echo 'get_stylesheet_directory: ABSPATH/' . str_replace( ABSPATH, '', get_stylesheet_directory());
+    echo '</p>';
 
     um_folder_permissions_shortcode_display( 'theme', '' );
     um_folder_permissions_shortcode_display( 'theme', '/ultimate-member' );
@@ -97,8 +119,11 @@ function um_folder_permissions_shortcode() {
 
     um_folder_permissions_shortcode_display( 'uploads', '' );
     um_folder_permissions_shortcode_display( 'uploads', '/ultimatemember' );
-    um_folder_permissions_shortcode_display( 'uploads', '/ultimatemember/' . $current_user->ID );
     um_folder_permissions_shortcode_display( 'uploads', '/ultimatemember/temp' );
+
+    if( isset( $current_user ) && !empty( $current_user->ID )) {
+        um_folder_permissions_shortcode_display( 'uploads', '/ultimatemember/' . $current_user->ID );
+    }
 
     $output = ob_get_contents();
     ob_end_clean();
