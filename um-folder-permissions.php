@@ -93,7 +93,7 @@ function um_folder_permissions_shortcode() {
     echo '<p>';    
     echo 'get_template: ' . get_template() . '<br>';    
     echo 'get_stylesheet: ' . get_stylesheet() . '<br>';
-    if( !empty( get_stylesheet_directory() )) {
+    if( empty( get_stylesheet_directory() )) {
         echo '</p>';
         echo '<p><strong>ERROR</strong>: The themes directory is either empty or does not exist.<br>
               Please check your installation.<br>
