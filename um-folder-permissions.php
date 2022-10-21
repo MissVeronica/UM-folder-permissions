@@ -2,7 +2,7 @@
 /**
  * Plugin Name:     Ultimate Member - Folder Permissions
  * Description:     Extension to Ultimate Member with a shortcode [um_folder_permissions] to list folder permissions in Active Theme's UM folders and the UM Upload folders.
- * Version:         1.1.0
+ * Version:         1.2.0
  * Requires PHP:    7.4
  * Author:          Miss Veronica
  * License:         GPL v2 or later
@@ -79,7 +79,7 @@ function um_folder_permissions_shortcode() {
     global $current_user;
     ob_start();
 
-    echo "<h4>UM folder permissions 1.1.0</h4>";
+    echo "<h4>UM folder permissions 1.2.0</h4>";
     echo '<p><strong>WP Standard permissions:</strong><br>Folder permission not less than 0755 octal<br>File permission not less than 0644 octal</p>';
 
     if( !empty( array_intersect( array_map( 'strtolower', get_loaded_extensions()), array( 'mod_security', 'mod security' )))) {
@@ -90,10 +90,15 @@ function um_folder_permissions_shortcode() {
     $basedir = ini_get( 'open_basedir' );
     if( !empty( $basedir )) echo '<p><strong>WARNING</strong>: open_basedir is active: ' . $basedir . '</p>';
 
-    echo '<p>';    
+    echo '<p>';
+    echo 'ABSPATH length in characters: ' . strlen( ABSPATH ) . '<br>';
     echo 'get_template: ' . get_template() . '<br>';    
     echo 'get_stylesheet: ' . get_stylesheet() . '<br>';
-    if( empty( get_stylesheet_directory() )) {
+    echo 'get_theme_root: ABSPATH/' . str_replace( ABSPATH, '', get_theme_root( get_stylesheet() )) . '<br>';
+    $get_stylesheet_directory = get_stylesheet_directory();
+    //echo 'get_stylesheet_directory: ' . $get_stylesheet_directory . '<br>';
+    echo 'get_stylesheet_directory: ABSPATH/' . str_replace( ABSPATH, '', $get_stylesheet_directory ) . '<br>';
+    if( empty( $get_stylesheet_directory ) || $get_stylesheet_directory == '/' ) {
         echo '</p>';
         echo '<p><strong>ERROR</strong>: The themes directory is either empty or does not exist.<br>
               Please check your installation.<br>
@@ -104,7 +109,9 @@ function um_folder_permissions_shortcode() {
 
         return $output;
     }
-    echo 'get_stylesheet_directory: ABSPATH/' . str_replace( ABSPATH, '', get_stylesheet_directory());
+    
+    echo 'all themes: ' . implode( ', ', array_keys( search_theme_directories())) . '<br>';
+    echo 'child-theme active: ' . ( is_child_theme()? 'yes':'no' ) . '<br>';
     echo '</p>';
 
     um_folder_permissions_shortcode_display( 'theme', '' );
