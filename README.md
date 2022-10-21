@@ -6,7 +6,7 @@ A shortcode [um_folder_permissions] to list UM folder permissions:
 
 UID/GID numbers for all folders are displayed.
 
-Details about theme folders and active folders.
+Details about theme folders and the active theme.
 
 Warnings for existing .htaccess file, open_basedir, Suhosin and ModSecurity active.
 
