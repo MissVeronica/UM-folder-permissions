@@ -2,7 +2,7 @@
 /**
  * Plugin Name:     Ultimate Member - Folder Permissions
  * Description:     Extension to Ultimate Member with a shortcode [um_folder_permissions] to list folder permissions in Active Theme's UM folders and the UM Upload folders.
- * Version:         1.2.0
+ * Version:         1.3.0
  * Requires PHP:    7.4
  * Author:          Miss Veronica
  * License:         GPL v2 or later
@@ -14,7 +14,6 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; 
-if ( ! class_exists( 'UM' ) ) return;
 
 add_shortcode( "um_folder_permissions", "um_folder_permissions_shortcode" );
 
@@ -23,8 +22,8 @@ function um_folder_permissions_shortcode_display( $case, $folder ) {
     switch( $case ) {
 
         case 'theme':
-                $theme = explode( '/wp-content', get_stylesheet_directory());
-                echo '<p><strong>...' . $theme[1] . $folder . '</strong>';
+                $theme = str_replace( WP_CONTENT_DIR, '', get_stylesheet_directory());
+                echo '<p><strong>...' . $theme . $folder . '</strong>';
                 um_folder_permissions_shortcode_display_details( get_stylesheet_directory() . $folder );
                 break;
 
@@ -79,7 +78,17 @@ function um_folder_permissions_shortcode() {
     global $current_user;
     ob_start();
 
-    echo "<h4>UM folder permissions 1.2.0</h4>";
+    echo "<h4>UM folder permissions 1.3.0</h4>";
+
+    if ( !current_user_can( 'administrator' )) { 
+
+        echo 'Administrators access only';
+        $output = ob_get_contents();
+        ob_end_clean();
+
+        return $output;
+    }
+    
     echo '<p><strong>WP Standard permissions:</strong><br>Folder permission not less than 0755 octal<br>File permission not less than 0644 octal</p>';
 
     if( !empty( array_intersect( array_map( 'strtolower', get_loaded_extensions()), array( 'mod_security', 'mod security' )))) {
@@ -112,6 +121,8 @@ function um_folder_permissions_shortcode() {
     
     echo 'all themes: ' . implode( ', ', array_keys( search_theme_directories())) . '<br>';
     echo 'child-theme active: ' . ( is_child_theme()? 'yes':'no' ) . '<br>';
+    echo 'UM active: ' . ( class_exists( 'UM' )? 'yes':'no' ) . '<br>';
+
     echo '</p>';
 
     um_folder_permissions_shortcode_display( 'theme', '' );
