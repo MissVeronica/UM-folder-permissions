@@ -2,7 +2,7 @@
 /**
  * Plugin Name:     Ultimate Member - Folder Permissions
  * Description:     Extension to Ultimate Member with a shortcode [um_folder_permissions] to list folder permissions in Active Theme's UM folders and the UM Upload folders.
- * Version:         1.3.0
+ * Version:         1.4.0
  * Requires PHP:    7.4
  * Author:          Miss Veronica
  * License:         GPL v2 or later
@@ -78,7 +78,7 @@ function um_folder_permissions_shortcode() {
     global $current_user;
     ob_start();
 
-    echo "<h4>UM folder permissions 1.3.0</h4>";
+    echo "<h4>UM folder permissions 1.4.0</h4>";
 
     if ( !current_user_can( 'administrator' )) { 
 
@@ -123,6 +123,15 @@ function um_folder_permissions_shortcode() {
     echo 'child-theme active: ' . ( is_child_theme()? 'yes':'no' ) . '<br>';
     echo 'UM active: ' . ( class_exists( 'UM' )? 'yes':'no' ) . '<br>';
 
+    if( file_exists( $get_stylesheet_directory . '/functions.php' )) {
+        $functions_content = strtolower( file_get_contents( $get_stylesheet_directory . '/functions.php' ));
+        echo 'active functions.php add_action count: ' . substr_count( $functions_content, 'add_action' ) . '<br>';
+        echo 'active functions.php add_filter count: ' . substr_count( $functions_content, 'add_filter' ) . '<br>';
+        echo 'active functions.php remove_action count: ' . substr_count( $functions_content, 'remove_action' ) . '<br>';
+        echo 'active functions.php remove_filter count: ' . substr_count( $functions_content, 'remove_filter' ) . '<br>';
+    } else echo 'active functions.php not found<br>';
+
+    echo 'Code Snippets plugin active: ' . ( defined( 'CODE_SNIPPETS_FILE' )? 'yes':'no' ) . '<br>';
     echo '</p>';
 
     um_folder_permissions_shortcode_display( 'theme', '' );
