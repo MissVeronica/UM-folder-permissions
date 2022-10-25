@@ -18,6 +18,6 @@ Current version 1.4.0
 # Installation
 Download the zip file and install as a WP Plugin, activate the plugin.
 
-Prepare a WP page where you add the shortcode: [um_folder_permissions]
+Prepare a new WP page where you add the shortcode: [um_folder_permissions]
 
 Display the page with your browser as site administrator and get the UM Folder Permissions display.
