@@ -1,4 +1,4 @@
-# UM Folder Permissions
+# Ultimate Member Plugin Folder Permissions
 
 A shortcode [um_folder_permissions] to list UM folder permissions:
 1. Active Theme's UM folders for customizations of email templates and UM page templates.
