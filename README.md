@@ -14,7 +14,7 @@ Error if according to WP the theme's directory is either empty or does not exist
 
 Files in these folders are checked for file permissions and the number of files for each permission level are listed.
 # Updates
-Current version 2.0.0
+Current version 2.2.0
 # Installation
 Download the zip file and install as a WP Plugin, activate the plugin.
 
