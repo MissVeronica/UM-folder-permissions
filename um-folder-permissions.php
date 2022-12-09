@@ -2,7 +2,7 @@
 /**
  * Plugin Name:     Ultimate Member - Folder Permissions
  * Description:     Extension to Ultimate Member with a shortcode [um_folder_permissions] to list folder permissions in Active Theme's UM folders and the UM Upload folders.
- * Version:         2.0.0
+ * Version:         2.2.0
  * Requires PHP:    7.4
  * Author:          Miss Veronica
  * License:         GPL v2 or later
@@ -17,26 +17,30 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 class UM_Folder_Permissions {
 
-    public $templates = array();
-    public $templates_update = array();
+    public $templates             = array();
+    public $templates_update      = array();
+    public $child                 = false;
+    public $uploads_folder_exists = true;
 
 	public function __construct() {
 
         add_shortcode( "um_folder_permissions", array( $this, "um_folder_permissions_shortcode" ));
 
-        $this->templates['/ultimate-member'] = array( 'login-to-view.php', 'members-grid.php', 'members-header.php',
-                                                      'members-list.php', 'members-pagination.php', 'searchform.php' );
+        $this->templates[DIRECTORY_SEPARATOR . 'ultimate-member'] = array( 'login-to-view.php', 'members-grid.php', 'members-header.php',
+                                                                           'members-list.php', 'members-pagination.php', 'searchform.php' );
 
-        $this->templates['/ultimate-member/email'] = array( 'deletion_email.php', 'notification_review.php', 'changedaccount_email.php',
-                                                            'rejected_email.php', 'notification_deletion.php', 'checkmail_email.php',
-                                                            'resetpw_email.php', 'welcome_email.php', 'changedpw_email.php',
-                                                            'inactive_email.php', 'approved_email.php', 'pending_email.php' );
+        $this->templates[DIRECTORY_SEPARATOR . 'ultimate-member' . DIRECTORY_SEPARATOR . 'email'] = array(  'deletion_email.php', 'notification_review.php', 'changedaccount_email.php',
+                                                                                                            'rejected_email.php', 'notification_deletion.php', 'checkmail_email.php',
+                                                                                                            'resetpw_email.php', 'welcome_email.php', 'changedpw_email.php', 'notification_new_user.php',
+                                                                                                            'inactive_email.php', 'approved_email.php', 'pending_email.php' );
 
-        $this->templates['/ultimate-member/templates'] = array( 'account.php', 'gdpr-register.php', 'login.php',
-                                                                'logout.php', 'members.php', 'message.php', 'password-change.php',
-                                                                'password-reset.php', 'profile.php', 'register.php' );
+        $this->templates[DIRECTORY_SEPARATOR . 'templates' . DIRECTORY_SEPARATOR . 'email'] = $this->templates[DIRECTORY_SEPARATOR . 'ultimate-member' . DIRECTORY_SEPARATOR . 'email'];
 
-        $this->templates['/ultimate-member/profile'] =   array( 'comments.php', 'comments-single.php', 'posts.php', 'posts-single.php' );
+        $this->templates[DIRECTORY_SEPARATOR . 'ultimate-member' . DIRECTORY_SEPARATOR . 'templates'] = array(  'account.php', 'gdpr-register.php', 'login.php',
+                                                                                                                'logout.php', 'members.php', 'message.php', 'password-change.php',
+                                                                                                                'password-reset.php', 'profile.php', 'register.php' );
+
+        $this->templates[DIRECTORY_SEPARATOR. 'ultimate-member' . DIRECTORY_SEPARATOR . 'profile'] =   array( 'comments.php', 'comments-single.php', 'posts.php', 'posts-single.php' );
 
         $this->templates_update = array('members.php'         => ' Updated UM 2.2.0',  
                                         'password-change.php' => ' Updated UM 2.5.0', 
@@ -56,6 +60,22 @@ class UM_Folder_Permissions {
                     $theme = str_replace( WP_CONTENT_DIR, '', get_stylesheet_directory());
                     echo esc_html( $theme . $folder ) . '</strong></div>';
                     $this->um_folder_permissions_shortcode_display_details( get_stylesheet_directory(), $folder );
+
+                    if( $folder == DIRECTORY_SEPARATOR . 'ultimate-member' . DIRECTORY_SEPARATOR . 'email' ) {
+                        
+                        if( $this->child ) {
+                            echo '<div style="padding-top: 10px;"><strong>...';
+                            $theme = str_replace( WP_CONTENT_DIR, '', get_template());
+                            echo esc_html( $theme . $folder ) . '</strong></div>';
+                            $this->um_folder_permissions_shortcode_display_details( WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'themes' . DIRECTORY_SEPARATOR . $theme, $folder );
+                        }
+
+                        echo '<div style="padding-top: 10px;"><strong>...';
+                        $theme = DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR . 'ultimate-member';
+                        $folder = DIRECTORY_SEPARATOR . 'templates' . DIRECTORY_SEPARATOR . 'email';
+                        echo esc_html( $theme . $folder ) . '</strong></div>';
+                        $this->um_folder_permissions_shortcode_display_details( WP_CONTENT_DIR . $theme, $folder );
+                    }
                     break;
 
             case 'uploads':
@@ -102,10 +122,10 @@ class UM_Folder_Permissions {
         $folder_path = $path . $folder;
         if( file_exists( $folder_path )) {
 
-            if( file_exists( $folder_path . '/.htaccess' )) {
+            if( file_exists( $folder_path . DIRECTORY_SEPARATOR . '.htaccess' )) {
                 $this->display_text_line( sprintf( '.htacces filesize %d bytes updated %s', 
-                                          esc_html( filesize( $folder_path . '/.htaccess' )), 
-                                          esc_html( date_i18n( 'Y-m-d H:i:s', filemtime( $folder_path . '/.htaccess' ))) ), 
+                                          esc_html( filesize( $folder_path . DIRECTORY_SEPARATOR . '.htaccess' )), 
+                                          esc_html( date_i18n( 'Y-m-d H:i:s', filemtime( $folder_path . DIRECTORY_SEPARATOR . '.htaccess' ))) ), 
                                           'WARNING' );
             }
 
@@ -120,53 +140,67 @@ class UM_Folder_Permissions {
             $this->display_table_row( 'GID',          $stat['gid'] . $windows );
             $this->display_table_row( 'end_table' );
 
-            $files = new DirectoryIterator( $folder_path . '/' );
+            $files = new DirectoryIterator( $folder_path . DIRECTORY_SEPARATOR );
 
-            if( !empty( $folder ) && isset( $this->templates[$folder] )) {
-                
-                $this->display_table_row( 'start_table', 'Templates' );
+            $count_templates = 0;
+            foreach( $files as $file ) {
+                if ( $file->isDot() || !$file->isFile() ) continue;
+                $count_templates++;
+            }
 
-                foreach( $files as $file ) {
-                    if ( $file->isDot() || !$file->isFile() ) continue;
-                    if( array_key_exists( $file->getFilename(), $this->templates_update )) $upd = $this->templates_update[$file->getFilename()];
-                    else $upd = '';            
-                    $this->display_table_row( in_array( $file->getFilename(), $this->templates[$folder] )? 'UM': 'Custom', 
-                                              esc_html( $file->getFilename() ), 
-                                              esc_html( substr( sprintf( '%o', $file->getPerms()), -4 )),
-                                              esc_html( date_i18n( 'Y-m-d H:i:s', $file->getMTime()) . $upd ));
+            if( $count_templates > 0 ) {
+
+                if( !empty( $folder ) && isset( $this->templates[$folder] )) {
+                    
+                    $this->display_table_row( 'start_table', $count_templates . ' Templates' );
+
+                    foreach( $files as $file ) {
+                        if ( $file->isDot() || !$file->isFile() ) continue;
+                        if( array_key_exists( $file->getFilename(), $this->templates_update )) $upd = $this->templates_update[$file->getFilename()];
+                        else $upd = '';            
+                        $this->display_table_row( in_array( $file->getFilename(), $this->templates[$folder] )? 'UM': 'Custom', 
+                                                esc_html( $file->getFilename() ), 
+                                                esc_html( substr( sprintf( '%o', $file->getPerms()), -4 )),
+                                                esc_html( date_i18n( 'Y-m-d H:i:s', $file->getMTime()) . $upd ));
+                    }
+
+                    $this->display_table_row( 'end_table' );
+            
+                } else {
+
+                    $permissions = array();
+                    $counter = 0;
+        
+                    foreach( $files as $file ) {
+                        if ( $file->isDot() || !$file->isFile() ) continue;
+                        $key = substr( sprintf( '%o', $file->getPerms()), -4 );
+                        if( !isset( $permissions[$key])) $permissions[$key] = 1;
+                        else $permissions[$key]++;
+                        $counter++;
+                    }
+        
+                    if( $counter > 0 ) {
+        
+                        $this->display_table_row( 'start_table', 'Total of ' . $counter . ' files in this folder with these permissions' );
+        
+                        foreach( $permissions as $key => $count ) {
+                            $this->display_table_row( esc_html( $key ), esc_html( $count ) );
+                        }
+        
+                        $this->display_table_row( 'end_table' );
+        
+                    } else $this->display_text_line( 'No files in this folder' );
                 }
 
-                $this->display_table_row( 'end_table' );
-          
             } else {
 
-                $permissions = array();
-                $counter = 0;
-    
-                foreach( $files as $file ) {
-                    if ( $file->isDot() || !$file->isFile() ) continue;
-                    $key = substr( sprintf( '%o', $file->getPerms()), -4 );
-                    if( !isset( $permissions[$key])) $permissions[$key] = 1;
-                    else $permissions[$key]++;
-                    $counter++;
-                }
-    
-                if( $counter > 0 ) {
-    
-                    $this->display_table_row( 'start_table', 'Total of ' . $counter . ' files in this folder with these permissions' );
-    
-                    foreach( $permissions as $key => $count ) {
-                        $this->display_table_row( esc_html( $key ), esc_html( $count ) );
-                    }
-    
-                    $this->display_table_row( 'end_table' );
-    
-                } else $this->display_text_line( 'No files in this folder' );
+                $this->display_text_line( 'No templates found' );
             }
 
         } else {
 
             $this->display_text_line( 'Folder not found' );
+            if( $folder == DIRECTORY_SEPARATOR . 'ultimatemember' ) $this->uploads_folder_exists = false;
         }
     }
 
@@ -175,7 +209,7 @@ class UM_Folder_Permissions {
         global $current_user;
         ob_start();
 
-        echo "<h4>UM folder permissions 2.0.0</h4>";
+        echo "<h4>UM folder permissions 2.2.0</h4>";
 
         if ( !current_user_can( 'administrator' )) { 
 
@@ -204,8 +238,8 @@ class UM_Folder_Permissions {
         $this->display_table_row( 'start_table' );
         $this->display_table_row( 'get_template',   esc_html( get_template()) );
         $this->display_table_row( 'get_stylesheet', esc_html( get_stylesheet()) );
-        $this->display_table_row( 'get_theme_root',           'ABSPATH/' . esc_html( str_replace( ABSPATH, '', get_theme_root( get_stylesheet() ))) );
-        $this->display_table_row( 'get_stylesheet_directory', 'ABSPATH/' . esc_html( str_replace( ABSPATH, '', $get_stylesheet_directory )) );
+        $this->display_table_row( 'get_theme_root',           'ABSPATH' . DIRECTORY_SEPARATOR . esc_html( str_replace( ABSPATH, '', get_theme_root( get_stylesheet() ))) );
+        $this->display_table_row( 'get_stylesheet_directory', 'ABSPATH' . DIRECTORY_SEPARATOR . esc_html( str_replace( ABSPATH, '', $get_stylesheet_directory )) );
         $this->display_table_row( 'end_table' );
 
         if( get_template() == 'oxygen-is-not-a-theme' && get_stylesheet() == 'fake' ) {
@@ -215,7 +249,7 @@ class UM_Folder_Permissions {
             return ob_get_clean();
         }
 
-        if( empty( $get_stylesheet_directory ) || $get_stylesheet_directory == '/' ) {
+        if( empty( $get_stylesheet_directory ) || $get_stylesheet_directory == DIRECTORY_SEPARATOR ) {
 
             $this->display_text_line( 'The themes directory is either empty or does not exist.<br>
                                        Please check your installation.<br>
@@ -224,14 +258,14 @@ class UM_Folder_Permissions {
         }
         
         $this->display_table_row( 'start_table', 'Themes' );
-        $child = false;
+        $this->child = false;
 
         foreach( array_keys( search_theme_directories()) as $theme ) {
 
             $display_theme = wp_get_theme( $theme );
             if( $display_theme->exists() ) {        
 
-                if( strpos( $theme, '-child') > 0 ) $child = true;
+                if( strpos( $theme, '-child') > 0 ) $this->child = true;
                 $this->display_table_row( esc_html( $theme ), 
                                           esc_html( $display_theme->get( 'Name' )), 
                                           esc_html( substr( $display_theme->get( 'Version' ), 0, 5 )), 
@@ -244,34 +278,47 @@ class UM_Folder_Permissions {
 
         $this->display_table_row( 'end_table' );
 
-        if( !$child ) {
+        if( !$this->child ) {
             $this->display_text_line( 'Try to create a child theme by using the<br>
                                        <a href="https://wordpress.org/plugins/child-theme-configurator/" 
                                        target="_blank">Child Theme Configurator</a> plugin.', 'NOTICE' );
         }
 
+        $php_memory_limit = ini_get( 'memory_limit' );
+        if( $php_memory_limit == -1 ) {
+            $php_memory_limit = 'No PHP memory limit';
+        } else {
+            if( is_int( $php_memory_limit )) $php_memory_limit = $php_memory_limit/1024/1024 . 'M';
+        }
+
         $this->display_table_row( 'start_table' );
         $this->display_table_row( 'Child-theme active',          is_child_theme()?                'yes':'no' );
         $this->display_table_row( 'UM active',                   class_exists( 'UM' )?            'yes version ' . ultimatemember_version:'no' );
-        $this->display_table_row( 'UM update installed',         esc_html( date_i18n( 'Y-m-d H:i:s', filemtime( WP_CONTENT_DIR . '/plugins/ultimate-member' ))) );
+        $this->display_table_row( 'UM update installed',         esc_html( date_i18n( 'Y-m-d H:i:s', filemtime( WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR . 'ultimate-member' ))) );
         $this->display_table_row( 'Code Snippets plugin active', defined( 'CODE_SNIPPETS_FILE' )? 'yes':'no' );
         $this->display_table_row( 'Multi site',                  is_multisite()?                  'yes':'no' );
         $this->display_table_row( 'WP Version',					 get_bloginfo( 'version' ));
         $this->display_table_row( 'PHP Version',              	 PHP_VERSION );
+        $this->display_table_row( 'PHP built on OS',             PHP_OS );
+        $this->display_table_row( 'PHP server API',              PHP_SAPI );
         $this->display_table_row( 'Web Server',          		 $_SERVER['SERVER_SOFTWARE'] );
         $this->display_table_row( 'WP Frontend Memory Limit',    WP_MEMORY_LIMIT );
         $this->display_table_row( 'WP Backend Memory Limit',     WP_MAX_MEMORY_LIMIT );
-        $this->display_table_row( 'PHP Memory Limit',         	 ini_get( 'memory_limit' ) );
+        $this->display_table_row( 'PHP Memory Limit',         	 $php_memory_limit );
         $this->display_table_row( 'Memory Limit allows raising', wp_is_ini_value_changeable( 'memory_limit' )? 'yes':'no' );
         $this->display_table_row( 'ABSPATH character length',    strlen( ABSPATH ));
+        //$this->display_table_row( 'GD Library imagerotate',      function_exists( 'imagerotate' )?  'yes':'no' );
+        //$this->display_table_row( 'GD Library imagecrop',        function_exists( 'imagecrop' )?    'yes':'no' );
+        
         $this->display_table_row( 'end_table' );
 
-        if( file_exists( $get_stylesheet_directory . '/functions.php' )) {
+        if( file_exists( $get_stylesheet_directory . DIRECTORY_SEPARATOR . 'functions.php' )) {
 
-            $functions_content = strtolower( file_get_contents( $get_stylesheet_directory . '/functions.php' ));
+            $functions_content = strtolower( file_get_contents( $get_stylesheet_directory . DIRECTORY_SEPARATOR . 'functions.php' ));
 
             $this->display_table_row( 'start_table', 'Active theme\'s functions.php' );
-            $this->display_table_row( 'Last update',   esc_html( date_i18n( 'Y-m-d H:i:s', filemtime( $get_stylesheet_directory . '/functions.php' ))) );
+            $this->display_table_row( 'Last update',   esc_html( date_i18n( 'Y-m-d H:i:s', filemtime( $get_stylesheet_directory . DIRECTORY_SEPARATOR . 'functions.php' ))) );
+            $this->display_table_row( 'File size',     esc_html( intval( filesize( $get_stylesheet_directory . DIRECTORY_SEPARATOR . 'functions.php' )/1024 ) . 'Kb' ));
             $this->display_table_row( 'add_action',    substr_count( $functions_content, 'add_action' ));
             $this->display_table_row( 'add_filter',    substr_count( $functions_content, 'add_filter' ));
             $this->display_table_row( 'remove_action', substr_count( $functions_content, 'remove_action' ));
@@ -291,21 +338,24 @@ class UM_Folder_Permissions {
         } else $this->display_text_line( 'Active theme\'s functions.php not found' );
 
         $this->um_folder_permissions_shortcode_display( 'theme', '' );
-        $this->um_folder_permissions_shortcode_display( 'theme', '/ultimate-member' );
-        $this->um_folder_permissions_shortcode_display( 'theme', '/ultimate-member/email' );       
-        $this->um_folder_permissions_shortcode_display( 'theme', '/ultimate-member/templates' );       
-        $this->um_folder_permissions_shortcode_display( 'theme', '/ultimate-member/profile' );       
+        $this->um_folder_permissions_shortcode_display( 'theme', DIRECTORY_SEPARATOR . 'ultimate-member' );
+        $this->um_folder_permissions_shortcode_display( 'theme', DIRECTORY_SEPARATOR . 'ultimate-member' . DIRECTORY_SEPARATOR . 'email' );       
+        $this->um_folder_permissions_shortcode_display( 'theme', DIRECTORY_SEPARATOR . 'ultimate-member' . DIRECTORY_SEPARATOR . 'templates' );       
+        $this->um_folder_permissions_shortcode_display( 'theme', DIRECTORY_SEPARATOR . 'ultimate-member' . DIRECTORY_SEPARATOR . 'profile' );       
 
         if( is_multisite()) {
-            $this->um_folder_permissions_shortcode_display( 'theme', '/ultimate-member/email/' . get_current_blog_id()); 
+            $this->um_folder_permissions_shortcode_display( 'theme', DIRECTORY_SEPARATOR . 'ultimate-member' . DIRECTORY_SEPARATOR . 'email' . DIRECTORY_SEPARATOR . get_current_blog_id()); 
         }
 
         $this->um_folder_permissions_shortcode_display( 'uploads', '' );
-        $this->um_folder_permissions_shortcode_display( 'uploads', '/ultimatemember' );
-        $this->um_folder_permissions_shortcode_display( 'uploads', '/ultimatemember/temp' );
+        $this->um_folder_permissions_shortcode_display( 'uploads', DIRECTORY_SEPARATOR . 'ultimatemember' );
 
-        if( isset( $current_user ) && !empty( $current_user->ID )) {
-            $this->um_folder_permissions_shortcode_display( 'uploads', '/ultimatemember/' . $current_user->ID );
+        if( $this->uploads_folder_exists ) {
+            $this->um_folder_permissions_shortcode_display( 'uploads', DIRECTORY_SEPARATOR . 'ultimatemember' . DIRECTORY_SEPARATOR . 'temp' );
+
+            if( isset( $current_user ) && !empty( $current_user->ID )) {
+                $this->um_folder_permissions_shortcode_display( 'uploads', DIRECTORY_SEPARATOR . 'ultimatemember' . DIRECTORY_SEPARATOR . $current_user->ID );
+            }
         }
 
         return ob_get_clean();
